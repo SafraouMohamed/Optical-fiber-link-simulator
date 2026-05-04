@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulateur Liaison Optique - Prof. Faouzi BAHLOUL</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: #f5f7fa; min-height: 100vh; }
+        .container { display: flex; min-height: 100vh; }
+        .sidebar { width: 320px; background: white; padding: 20px; overflow-y: auto; border-right: 1px solid #e0e0e0; }
+        .main { flex: 1; padding: 20px; overflow-y: auto; }
+        h1 { color: #1a73e8; font-size: 24px; margin-bottom: 5px; }
+        h2 { color: #333; font-size: 18px; margin: 20px 0 10px; border-bottom: 2px solid #1a73e8; padding-bottom: 5px; }
+        h3 { color: #555; font-size: 14px; margin: 15px 0 8px; font-weight: 600; }
+        .subtitle { color: #666; font-size: 12px; margin-bottom: 20px; }
+        .form-group { margin-bottom: 12px; }
+        label { display: block; font-size: 13px; color: #555; margin-bottom: 4px; }
+        input, select { width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; }
+        input:focus, select:focus { outline: none; border-color: #1a73e8; }
+        .btn { width: 100%; padding: 12px; background: #1a73e8; color: white; border: none; border-radius: 6px; font-size: 15px; cursor: pointer; margin-top: 15px; }
+        .btn:hover { background: #1557b0; }
+        .section { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .result-ok { color: #28a745; font-weight: bold; }
+        .result-fail { color: #dc3545; font-weight: bold; }
+        .metric { display: inline-block; padding: 10px 15px; background: #f8f9fa; border-radius: 6px; margin: 5px; min-width: 120px; }
+        .metric-label { font-size: 11px; color: #666; }
+        .metric-value { font-size: 18px; font-weight: 600; color: #333; }
+        .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+        .detail-label { color: #666; }
+        .detail-value { font-weight: 500; }
+        .tab-container { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab { padding: 10px 20px; background: #e0e0e0; border-radius: 6px; cursor: pointer; }
+        .tab.active { background: #1a73e8; color: white; }
+        .chart-container { height: 400px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h1>Simulateur Liaison Optique</h1>
+            <p class="subtitle">Prof. Faouzi BAHLOUL - ENIT</p>
+            
+            <h2>Émetteur Optique</h2>
+            <div class="form-group">
+                <label>Puissance émise Pe (dBm)</label>
+                <input type="number" id="Pe" value="0" step="0.1">
+            </div>
+            <div class="form-group">
+                <label>Longueur d'onde λ (nm)</label>
+                <input type="number" id="lambda" value="1550" step="1">
+            </div>
+            <div class="form-group">
+                <label>Type de source</label>
+                <select id="typeSource">
+                    <option value="Laser">Laser</option>
+                    <option value="LED">LED</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Largeur spectrale Δλ (nm)</label>
+                <input type="number" id="deltaLambda" value="1" step="0.1">
+            </div>
+            <div class="form-group">
+                <label>Perte couplage ηc (dB)</label>
+                <input type="number" id="etaC" value="3" step="0.5">
+            </div>
+            
+            <h2>Fibre Optique</h2>
+            <div class="form-group">
+                <label>Type de fibre</label>
+                <select id="typeFibre" onchange="toggleFibre()">
+                    <option value="SMF">SMF (Monomode)</option>
+                    <option value="MMF">MMF (Multimode)</option>
+                </select>
+            </div>
+            <div class="form-group" id="input-profil" style="display:none;">
+                <label>Profil d'indice</label>
+                <select id="profil">
+                    <option value="Saut">Saut</option>
+                    <option value="Gradient">Gradient</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Indice cœur n1</label>
+                <input type="number" id="n1" value="1.485" step="0.001">
+            </div>
+            <div class="form-group">
+                <label>Indice gaine n2</label>
+                <input type="number" id="n2" value="1.470" step="0.001">
+            </div>
+            <div class="form-group">
+                <label>Rayon cœur a (μm)</label>
+                <input type="number" id="a" value="4" step="0.5">
+            </div>
+            <div class="form-group">
+                <label>Atténuation α (dB/km)</label>
+                <input type="number" id="alpha" value="0.2" step="0.01">
+            </div>
+            <div class="form-group">
+                <label>Dispersion Dc (ps/nm·km)</label>
+                <input type="number" id="Dc" value="18" step="0.5">
+            </div>
+            
+            <h2>Récepteur Optique</h2>
+            <div class="form-group">
+                <label>Sensibilité Pmin (dBm)</label>
+                <input type="number" id="Pmin" value="-30" step="0.5">
+            </div>
+            
+            <h2>Système</h2>
+            <div class="form-group">
+                <label>Mode</label>
+                <select id="mode" onchange="toggleMode()">
+                    <option value="verifier">Vérifier (Distance → Vérifier)</option>
+                    <option value="lmax">Calculer Lmax (Débit → Distance)</option>
+                    <option value="debit">Calculer Débit (Distance → Débit)</option>
+                </select>
+            </div>
+            <div class="form-group" id="input-L">
+                <label>Longueur L (km)</label>
+                <input type="number" id="L" value="50" step="1">
+            </div>
+            <div class="form-group" id="input-debit" style="display:none;">
+                <label>Débit cible (Gbps)</label>
+                <input type="number" id="debitCible" value="10" step="1">
+            </div>
+            <div class="form-group">
+                <label>Perte connecteur (dB)</label>
+                <input type="number" id="Aconn" value="0.5" step="0.1">
+            </div>
+            <div class="form-group">
+                <label>Perte épissure (dB)</label>
+                <input type="number" id="Aep" value="0.3" step="0.05">
+            </div>
+            <div class="form-group">
+                <label>Longueur bobine</label>
+                <select id="bobineMode" onchange="toggleBobine()">
+                    <option value="fixe">Fixe (1 km)</option>
+                    <option value="editable">Editable</option>
+                </select>
+            </div>
+            <div class="form-group" id="input-bobine" style="display:none;">
+                <label>Longueur bobine (km)</label>
+                <input type="number" id="Lcable" value="1" step="0.1">
+            </div>
+            <div class="form-group">
+                <label>Adaptation d'indice</label>
+                <select id="adaptIndex">
+                    <option value="non">Non</option>
+                    <option value="oui">Oui</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Codage</label>
+                <select id="codage">
+                    <option value="NRZ">NRZ</option>
+                    <option value="RZ">RZ</option>
+                </select>
+            </div>
+            
+            <button class="btn" onclick="analyser()">Analyser</button>
+        </div>
+        
+        <div class="main">
+            <div class="tab-container">
+                <div class="tab active" onclick="showTab('rapport')">Rapport</div>
+                <div class="tab" onclick="showTab('graphique')">Graphique</div>
+            </div>
+            
+            <div id="rapport">
+                <div class="section">
+                    <h2>Rapport de Faisabilité</h2>
+                    <div id="etatResult"></div>
+                </div>
+                
+                <div class="section">
+                    <h2>Bilan de Puissance</h2>
+                    <div id="puissanceMetrics"></div>
+                </div>
+                
+                <div class="section">
+                    <h2>Analyse de Dispersion</h2>
+                    <div id="dispersionMetrics"></div>
+                </div>
+                
+                <div class="section">
+                    <h2>Distances Maximales</h2>
+                    <div id="distanceMetrics"></div>
+                </div>
+                
+                <div class="section">
+                    <h2>Analyse Modale</h2>
+                    <div id="modaleMetrics"></div>
+                </div>
+            </div>
+            
+            <div id="graphique" style="display:none;">
+                <div class="section">
+                    <h2>Courbe Puissance = f(Distance)</h2>
+                    <div class="chart-container">
+                        <canvas id="chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let myChart = null;
+        
+        function toggleMode() {
+            const mode = document.getElementById('mode').value;
+            document.getElementById('input-L').style.display = mode === 'verifier' || mode === 'debit' ? 'block' : 'none';
+            document.getElementById('input-debit').style.display = mode === 'lmax' ? 'block' : 'none';
+        }
+        
+        function toggleBobine() {
+            const bobineMode = document.getElementById('bobineMode').value;
+            document.getElementById('input-bobine').style.display = bobineMode === 'editable' ? 'block' : 'none';
+        }
+        
+        function toggleFibre() {
+            const typeFibre = document.getElementById('typeFibre').value;
+            document.getElementById('input-profil').style.display = typeFibre === 'MMF' ? 'block' : 'none';
+        }
+        
+        function calculerDelta(n1, n2) { return (n1 - n2) / n1; }
+        function calculerNA(n1, n2) { return Math.sqrt(n1*n1 - n2*n2); }
+        
+        function analyser() {
+            const Pe = parseFloat(document.getElementById('Pe').value);
+            const lambda = parseFloat(document.getElementById('lambda').value);
+            const deltaLambda = parseFloat(document.getElementById('deltaLambda').value);
+            const etaC = parseFloat(document.getElementById('etaC').value);
+            
+            const typeFibre = document.getElementById('typeFibre').value;
+            const n1 = parseFloat(document.getElementById('n1').value);
+            const n2 = parseFloat(document.getElementById('n2').value);
+            const a = parseFloat(document.getElementById('a').value);
+            const alpha = parseFloat(document.getElementById('alpha').value);
+            const Dc = parseFloat(document.getElementById('Dc').value);
+            const mode = document.getElementById('mode').value;
+            
+            const Pmin = parseFloat(document.getElementById('Pmin').value);
+            const Aconn = parseFloat(document.getElementById('Aconn').value);
+            const Aep = parseFloat(document.getElementById('Aep').value);
+            const adaptIndex = document.getElementById('adaptIndex').value === 'oui';
+            const bobineMode = document.getElementById('bobineMode').value;
+            const codage = document.getElementById('codage').value;
+            
+            // Codage coefficient: NRZ = 0.7, RZ = 0.35
+            const coef = codage === 'NRZ' ? 0.7 : 0.35;
+            
+            const Nconn = 2;
+            const Lcable = bobineMode === 'editable' ? parseFloat(document.getElementById('Lcable').value) : 1;
+            
+            const Afresnel = adaptIndex ? 0 : 0.6;
+            const Aconnecteurs = Nconn * Aconn;
+            
+            // Parse debit only for modes that need it
+            let debitCible = 0;
+            if (mode === 'verifier' || mode === 'lmax') {
+                debitCible = parseFloat(document.getElementById('debitCible').value) * 1e9;
+            }
+            
+            // First calculate Lmax without needing L
+            const delta = calculerDelta(n1, n2);
+            const NA = calculerNA(n1, n2);
+            const Pinj = Pe - etaC;
+            
+            // Calculate Lmax based on attenuation (used for all modes)
+            // Need to include splice losses in Lmax calculation
+            const lossesPerKm = Aconnecteurs + Afresnel + (Aep / Lcable); // Fixed losses + splice loss per km
+            const LmaxAtt = (Pinj - Pmin - lossesPerKm) / alpha;
+            
+            // Get values based on mode
+            let L_val, debitCible_val, LmaxDisp = 0, Lmax = LmaxAtt, facteur = 'ATTÉNUATION';
+            
+            if (mode === 'lmax') {
+                // Mode: Calculate Lmax from target debit
+                // Use target debit to find dispersion limit, then take MIN of attenuation limit
+                debitCible_val = parseFloat(document.getElementById('debitCible').value) * 1e9;
+                if (Dc * deltaLambda > 0) {
+                    LmaxDisp = coef / (debitCible_val * Dc * deltaLambda * 1e-12);
+                }
+                L_val = Math.min(LmaxAtt, LmaxDisp);
+                Lmax = L_val;
+                facteur = LmaxAtt <= LmaxDisp ? 'ATTÉNUATION' : 'DISPERSION';
+            } else if (mode === 'debit') {
+                // Mode: Calculate max debit from given L
+                L_val = parseFloat(document.getElementById('L').value);
+                debitCible_val = 0; // Will calculate from dispersion
+            } else {
+                // Mode: verifier
+                L_val = parseFloat(document.getElementById('L').value);
+                debitCible_val = parseFloat(document.getElementById('debitCible').value) * 1e9;
+                if (Dc * deltaLambda > 0) {
+                    LmaxDisp = coef / (debitCible_val * Dc * deltaLambda * 1e-12);
+                }
+                Lmax = Math.min(LmaxAtt, LmaxDisp);
+                facteur = LmaxAtt <= LmaxDisp ? 'ATTÉNUATION' : 'DISPERSION';
+            }
+            
+            // Calculate actual L for power analysis
+            const L_forCalc = mode === 'lmax' ? Lmax : L_val;
+            const L_use = L_forCalc;
+            
+            // Now calculate with actual L value
+            const Afibre = alpha * L_use;
+            const Nep = Math.floor(L_use / Lcable);
+            const Aepissures = Nep * Aep;
+            
+            const Atotale = Afibre + Aepissures + Aconnecteurs + Afresnel;
+            const Prx = Pinj - Atotale;
+            
+            const marge = Prx - Pmin;
+            const fonctionnel = marge >= 0;
+            
+            const lambdaUm = lambda / 1000;
+            const V = (2 * Math.PI * a / lambdaUm) * NA;
+            const monomode = typeFibre === 'SMF' ? true : (V < 2.405);
+            
+            const deltaTauCh = Dc * deltaLambda * L_use;
+            const deltaTauIm = typeFibre === 'SMF' ? 0 : (n1 / 3e5) * delta * L_use * 1000;
+            const deltaTauTotal = Math.sqrt(deltaTauCh**2 + deltaTauIm**2);
+            
+            let DbMax = 0;
+            if (deltaTauTotal > 0) DbMax = coef / (deltaTauTotal * 1e-12);
+            
+            // (Lmax already calculated above)
+            
+            let etatHTML = '';
+            let puissanceHTML = '';
+            
+            if (mode === 'verifier') {
+                document.getElementById('distanceMetrics').innerHTML = `
+                    <div class="metric">
+                        <div class="metric-label">Lmax_att (km)</div>
+                        <div class="metric-value">${LmaxAtt.toFixed(1)}</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Lmax_disp (km)</div>
+                        <div class="metric-value">${LmaxDisp.toFixed(1)}</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Lmax_système (km)</div>
+                        <div class="metric-value">${Lmax.toFixed(1)}</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Facteur Limitant</div>
+                        <div class="metric-value">${facteur}</div>
+                    </div>
+                `;
+            } else if (mode === 'lmax') {
+                document.getElementById('distanceMetrics').innerHTML = `
+                    <div class="metric">
+                        <div class="metric-label">Lmax_att (km)</div>
+                        <div class="metric-value">${LmaxAtt.toFixed(1)}</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Lmax_disp (km)</div>
+                        <div class="metric-value">${LmaxDisp.toFixed(1)}</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Distance max (km)</div>
+                        <div class="metric-value" style="color:#1a73e8;font-size:22px;">${L_use.toFixed(1)}</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Facteur Limitant</div>
+                        <div class="metric-value">${facteur}</div>
+                    </div>
+                `;
+            } else {
+                document.getElementById('distanceMetrics').innerHTML = `
+                    <div class="metric">
+                        <div class="metric-label">Lmax_att (km)</div>
+                        <div class="metric-value">${LmaxAtt.toFixed(1)}</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Distance actuelle (km)</div>
+                        <div class="metric-value">${L_use.toFixed(1)}</div>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('modaleMetrics').innerHTML = `
+                <div class="metric">
+                    <div class="metric-label">Nombre V</div>
+                    <div class="metric-value">${V.toFixed(2)}</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Mode</div>
+                    <div class="metric-value">${monomode ? 'Monomode' : 'Multimode'}</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Δ (%)</div>
+                    <div class="metric-value">${(delta*100).toFixed(2)}</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Ouverture Numérique</div>
+                    <div class="metric-value">${NA.toFixed(3)}</div>
+                </div>
+            `;
+            
+            // Rapport de faisabilité
+            let okLiaison = false;
+            let debitAffiche = 0;
+            
+            if (mode === 'debit') {
+                // Calculate max debit from L
+                const debitCalc = DbMax;
+                okLiaison = (marge >= 0);
+                debitAffiche = debitCalc / 1e9;
+                document.getElementById('etatResult').innerHTML = `
+                    <div class="${okLiaison ? 'result-ok' : 'result-fail'}" style="font-size:20px;padding:15px;border-radius:8px;background:${okLiaison ? '#d4edda' : '#f8d7da'};">
+                        ${okLiaison ? '✓ LIAISON FONCTIONNELLE - Débit max limité par Puissance' : '✗ LIAISON NON FONCTIONNELLE'}
+                    </div>
+                `;
+            } else if (mode === 'lmax') {
+                // For lmax mode: check if the calculated distance actually works
+                okLiaison = (marge >= 0) && (DbMax >= debitCible_val / 1e9);
+                debitAffiche = debitCible_val / 1e9;
+                if (okLiaison) {
+                    document.getElementById('etatResult').innerHTML = `
+                        <div class="result-ok" style="font-size:20px;padding:15px;border-radius:8px;background:#d4edda;">
+                            ✓ Lmax = ${L_use.toFixed(1)} km pour ${debitAffiche.toFixed(2)} Gbps (${facteur})
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('etatResult').innerHTML = `
+                        <div class="result-fail" style="font-size:20px;padding:15px;border-radius:8px;background:#f8d7da;">
+                            ⚠ Lien impossible - Marge=${marge.toFixed(1)} dB
+                        </div>
+                    `;
+                }
+            } else {
+                okLiaison = fonctionnel && (DbMax >= debitCible / 1e9);
+                debitAffiche = (DbMax/1e9);
+                document.getElementById('etatResult').innerHTML = `
+                    <div class="${okLiaison ? 'result-ok' : 'result-fail'}" style="font-size:20px;padding:15px;border-radius:8px;background:${okLiaison ? '#d4edda' : '#f8d7da'};">
+                        ${okLiaison ? '✓ LIAISON FONCTIONNELLE' : '✗ LIAISON NON FONCTIONNELLE'}
+                    </div>
+                `;
+            }
+            
+            // Bilan de puissance
+            document.getElementById('puissanceMetrics').innerHTML = `
+                <div class="detail-row"><span class="detail-label">Puissance émise Pe</span><span class="detail-value">${Pe.toFixed(1)} dBm</span></div>
+                <div class="detail-row"><span class="detail-label">Perte couplage ηc</span><span class="detail-value">${etaC.toFixed(1)} dB</span></div>
+                <div class="detail-row"><span class="detail-label">Puissance injectée Pinj</span><span class="detail-value">${Pinj.toFixed(1)} dBm</span></div>
+                <div class="detail-row"><span class="detail-label">Perte fibre</span><span class="detail-value">${Afibre.toFixed(1)} dB</span></div>
+                <div class="detail-row"><span class="detail-label">Perte épissures (${Nep})</span><span class="detail-value">${Aepissures.toFixed(1)} dB</span></div>
+                <div class="detail-row"><span class="detail-label">Perte connecteurs</span><span class="detail-value">${Aconnecteurs.toFixed(1)} dB</span></div>
+                <div class="detail-row"><span class="detail-label">Perte Fresnel</span><span class="detail-value">${Afresnel.toFixed(1)} dB</span></div>
+                <div class="detail-row"><span class="detail-label">Perte totale</span><span class="detail-value">${Atotale.toFixed(1)} dB</span></div>
+                <div class="detail-row" style="background:#e8f5e9;padding:10px;border-radius:4px;"><span class="detail-label">Puissance reçue Prx</span><span class="detail-value">${Prx.toFixed(1)} dBm</span></div>
+                <div class="detail-row"><span class="detail-label">Seuil Pmin</span><span class="detail-value">${Pmin.toFixed(1)} dBm</span></div>
+                <div class="detail-row"><span class="detail-label">Marge</span><span class="detail-value ${marge >= 0 ? 'result-ok' : 'result-fail'}">${marge.toFixed(1)} dB</span></div>
+            `;
+            
+            // Analyse de dispersion
+            document.getElementById('dispersionMetrics').innerHTML = `
+                <div class="metric"><div class="metric-label">Δτ Chrome (ps)</div><div class="metric-value">${deltaTauCh.toFixed(1)}</div></div>
+                <div class="metric"><div class="metric-label">Δτ Intermodale (ps)</div><div class="metric-value">${deltaTauIm.toFixed(1)}</div></div>
+                <div class="metric"><div class="metric-label">Δτ Total (ps)</div><div class="metric-value">${deltaTauTotal.toFixed(1)}</div></div>
+                <div class="metric"><div class="metric-label">Débit Max (Gbps)</div><div class="metric-value">${(DbMax/1e9).toFixed(2)}</div></div>
+            `;
+            
+            genererGraphique(Pinj, alpha, Lcable, Aep, Aconnecteurs + Afresnel, LmaxAtt, Pmin);
+        }
+        
+        function genererGraphique(Pinj, alpha, Lcable, Aep, Afixe, Lmax, Pmin) {
+            const Lvals = [];
+            const Prxvals = [];
+            const nPoints = 100;
+            
+            for (let i = 0; i <= nPoints; i++) {
+                const L = (i / nPoints) * Lmax * 1.2;
+                const Afibre = alpha * L;
+                const Nep = Math.floor(L / Lcable);
+                const AepT = Nep * Aep;
+                const Atotal = Afibre + AepT + Afixe;
+                Lvals.push(L.toFixed(1));
+                Prxvals.push((Pinj - Atotal).toFixed(2));
+            }
+            
+            if (myChart) myChart.destroy();
+            
+            const ctx = document.getElementById('chart').getContext('2d');
+            myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Lvals,
+                    datasets: [{
+                        label: `P_rx (α=${alpha} dB/km)`,
+                        data: Prxvals,
+                        borderColor: '#1a73e8',
+                        backgroundColor: 'rgba(26, 115, 232, 0.1)',
+                        fill: true,
+                        tension: 0
+                    }, {
+                        label: 'Seuil Pmin',
+                        data: Array(Lvals.length).fill(Pmin),
+                        borderColor: '#dc3545',
+                        borderDash: [5, 5],
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: { display: false }
+                    },
+                    scales: {
+                        x: { 
+                            title: { display: true, text: 'Distance (km)' },
+                            type: 'linear',
+                            ticks: { stepSize: 10 }
+                        },
+                        y: { title: { display: true, text: 'Puissance (dBm)' } }
+                    }
+                }
+            });
+        }
+        
+        function showTab(tab) {
+            document.getElementById('rapport').style.display = tab === 'rapport' ? 'block' : 'none';
+            document.getElementById('graphique').style.display = tab === 'graphique' ? 'block' : 'none';
+            document.querySelectorAll('.tab').forEach((t, i) => {
+                t.classList.toggle('active', i === (tab === 'rapport' ? 0 : 1));
+            });
+        }
+        
+        function init() {
+            toggleMode();
+            toggleBobine();
+            toggleFibre();
+            analyser();
+        }
+        
+        init();
+    </script>
+</body>
+</html>
