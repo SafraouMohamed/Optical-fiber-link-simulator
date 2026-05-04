@@ -1,0 +1,96 @@
+{
+  "SMF Standard 1550": {
+    "description": "Fibre monomode télécom longue distance",
+    "lambda_nm": 1550,
+    "alpha_dB_km": 0.2,
+    "Dc_ps_nm_km": 17,
+    "type_fibre": "SMF",
+    "profil": "Saut"
+  },
+  "SMF Standard 1310": {
+    "description": "Fibre monomode fenêtre 1310 nm",
+    "lambda_nm": 1310,
+    "alpha_dB_km": 0.35,
+    "Dc_ps_nm_km": 0,
+    "type_fibre": "SMF",
+    "profil": "Saut"
+  },
+  "MMF OM2 850": {
+    "description": "Multimode réseau local",
+    "lambda_nm": 850,
+    "alpha_dB_km": 2.5,
+    "type_fibre": "MMF",
+    "profil": "Saut",
+    "n1": 1.517,
+    "n2": 1.497,
+    "a_um": 25,
+    "na": 0.275
+  },
+  "MMF OM3 850": {
+    "description": "Multimode haut débit",
+    "lambda_nm": 850,
+    "alpha_dB_km": 2.5,
+    "type_fibre": "MMF",
+    "profil": "Gradient",
+    "n1": 1.517,
+    "n2": 1.497,
+    "a_um": 25,
+    "na": 0.275
+  },
+  "Exercice 1 ENIT": {
+    "description": "Configuration Exercice 1 Page 36",
+    "Pe_dBm": 0,
+    "lambda_nm": 1550,
+    "type_source": "Laser",
+    "eta_c_dB": -4,
+    "delta_lambda_nm": 0.02,
+    "type_fibre": "SMF",
+    "alpha_dB_km": 0.2,
+    "Dc_ps_nm_km": 18,
+    "L_km": 100,
+    "P_min_dBm": -30,
+    "n1": 1.485,
+    "n2": 1.470,
+    "a_um": 4
+  },
+  "Probleme 1 S1": {
+    "description": "Système S1 Problème 1 Page 35",
+    "Pe_dBm": 0,
+    "lambda_nm": 1300,
+    "type_source": "Laser",
+    "eta_c_dB": -3,
+    "alpha_dB_km": 0.35,
+    "Dc_ps_nm_km": 3.5,
+    "L_km": 50,
+    "P_min_dBm": -45,
+    "type_fibre": "SMF",
+    "type_detector": "APD"
+  },
+  "Probleme 1 S2": {
+    "description": "Système S2 Problème 1 Page 35",
+    "Pe_dBm": 0,
+    "lambda_nm": 1550,
+    "type_source": "Laser",
+    "eta_c_dB": -3,
+    "alpha_dB_km": 0.17,
+    "Dc_ps_nm_km": 20,
+    "L_km": 80,
+    "P_min_dBm": -47,
+    "type_fibre": "SMF",
+    "type_detector": "APD"
+  },
+  "Test Utilisateur": {
+    "description": "Test: 0dBm, 0.2dB/km, 1.55μm, 50km",
+    "Pe_dBm": 0,
+    "lambda_nm": 1550,
+    "type_source": "Laser",
+    "eta_c_dB": -3,
+    "delta_lambda_nm": 1,
+    "type_fibre": "SMF",
+    "alpha_dB_km": 0.2,
+    "Dc_ps_nm_km": 18,
+    "L_km": 50,
+    "P_min_dBm": -30,
+    "type_detector": "PIN"
+  }
+}
